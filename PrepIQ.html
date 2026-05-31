@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PrepIQ — Smart Quiz Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fdf4ff;
+  --bg2:#fef0ff;
+  --bg3:#ffffff;
+  --surface:#fce8ff;
+  --surface2:#f5d6ff;
+  --border:rgba(180,60,220,0.12);
+  --border2:rgba(180,60,220,0.22);
+  --text:#1a0a2e;
+  --text2:#5a3a7a;
+  --text3:#a07ab8;
+  --p1:#c026d3;
+  --p2:#a21caf;
+  --p3:#7e22ce;
+  --pink:#f472b6;
+  --pink2:#ec4899;
+  --pink3:#db2777;
+  --hot:#ff0080;
+  --grad:linear-gradient(135deg,#c026d3 0%,#a855f7 40%,#ec4899 100%);
+  --grad2:linear-gradient(135deg,#f472b6 0%,#c026d3 50%,#7c3aed 100%);
+  --grad3:linear-gradient(135deg,#fdf4ff 0%,#fce7f3 50%,#ede9fe 100%);
+  --shadow:0 4px 24px rgba(192,38,211,0.15);
+  --shadow-lg:0 12px 48px rgba(192,38,211,0.25);
+  --glow:0 0 40px rgba(236,72,153,0.3);
+  --green:#10b981;
+  --green-bg:rgba(16,185,129,0.1);
+  --red:#ef4444;
+  --red-bg:rgba(239,68,68,0.1);
+  --amber:#f59e0b;
+  --amber-bg:rgba(245,158,11,0.1);
+  --r:12px;--r-lg:18px;--r-xl:24px;--r-2xl:32px;
+  --font-display:'Playfair Display',serif;
+  --font-body:'Plus Jakarta Sans',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --t:0.2s cubic-bezier(0.4,0,0.2,1);
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;font-size:15px}
+
+/* ── Decorative BG ── */
+body::before{content:'';position:fixed;inset:0;background:
+  radial-gradient(ellipse 600px 400px at 80% -10%,rgba(192,38,211,0.12),transparent),
+  radial-gradient(ellipse 500px 500px at -10% 60%,rgba(236,72,153,0.1),transparent),
+  radial-gradient(ellipse 400px 300px at 60% 90%,rgba(168,85,247,0.08),transparent);
+  pointer-events:none;z-index:0}
+body::after{content:'';position:fixed;inset:0;
+  background-image:radial-gradient(circle,rgba(192,38,211,0.06) 1px,transparent 1px);
+  background-size:28px 28px;pointer-events:none;z-index:0}
+
+/* ── Layout ── */
+#app{position:relative;z-index:1;display:flex;min-height:100vh}
+.view{display:none;animation:fadeUp .3s ease}
+.view.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Sidebar ── */
+.sidebar{
+  width:248px;background:linear-gradient(180deg,rgba(255,255,255,0.95),rgba(253,244,255,0.95));
+  border-right:1px solid var(--border2);
+  display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50;
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+}
+.sidebar-logo{padding:28px 22px 22px;border-bottom:1px solid var(--border)}
+.logo-wordmark{
+  font-family:var(--font-display);font-size:26px;font-weight:900;letter-spacing:-0.5px;
+  background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  line-height:1
+}
+.logo-sub{font-size:10px;color:var(--text3);margin-top:3px;font-family:var(--font-mono);letter-spacing:.1em;text-transform:uppercase}
+.sidebar-nav{flex:1;padding:14px 12px;display:flex;flex-direction:column;gap:3px}
+.nav-label{font-size:9.5px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.1em;color:var(--text3);padding:10px 10px 5px}
+.nav-btn{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:none;
+  background:transparent;color:var(--text2);font-family:var(--font-body);font-size:13.5px;
+  font-weight:500;cursor:pointer;text-align:left;transition:all var(--t);width:100%;position:relative
+}
+.nav-btn:hover{background:var(--surface);color:var(--p1)}
+.nav-btn.active{
+  background:linear-gradient(135deg,rgba(192,38,211,0.12),rgba(236,72,153,0.08));
+  color:var(--p1);border:1px solid rgba(192,38,211,0.2)
+}
+.nav-btn .nav-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;background:var(--surface);transition:all var(--t)}
+.nav-btn.active .nav-icon{background:var(--grad);font-size:14px}
+.nav-btn.active .nav-icon svg{stroke:white}
+.nav-badge{margin-left:auto;background:var(--grad);color:#fff;font-size:10px;font-family:var(--font-mono);padding:2px 7px;border-radius:20px;min-width:22px;text-align:center}
+.sidebar-footer{padding:14px 12px;border-top:1px solid var(--border)}
+.footer-stats{font-size:11px;color:var(--text3);font-family:var(--font-mono);text-align:center}
+
+/* ── Main ── */
+.main{margin-left:248px;flex:1;min-height:100vh;padding:36px 40px;max-width:calc(100vw - 248px)}
+
+/* ── Page header ── */
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:28px}
+.page-title{font-family:var(--font-display);font-size:30px;font-weight:900;letter-spacing:-.5px;color:var(--text);line-height:1.15}
+.page-subtitle{font-size:12px;color:var(--text3);margin-top:4px;font-family:var(--font-mono)}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:10px;font-family:var(--font-body);font-size:13.5px;font-weight:600;cursor:pointer;transition:all var(--t);border:1.5px solid var(--border2);background:white;color:var(--text2);white-space:nowrap}
+.btn:hover{border-color:var(--p1);color:var(--p1);transform:translateY(-1px);box-shadow:var(--shadow)}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--grad);border-color:transparent;color:#fff;box-shadow:var(--shadow)}
+.btn-primary:hover{background:var(--grad2);color:#fff;box-shadow:var(--shadow-lg)}
+.btn-pink{background:linear-gradient(135deg,#ec4899,#be185d);border-color:transparent;color:#fff;box-shadow:0 4px 20px rgba(236,72,153,0.35)}
+.btn-pink:hover{background:linear-gradient(135deg,#f472b6,#ec4899);color:#fff}
+.btn-danger{background:transparent;color:var(--red);border-color:rgba(239,68,68,0.25)}
+.btn-danger:hover{background:var(--red-bg);transform:translateY(-1px)}
+.btn-ghost{background:transparent;border-color:transparent;color:var(--text3)}
+.btn-ghost:hover{background:var(--surface);color:var(--text2);transform:none}
+.btn-sm{padding:6px 13px;font-size:12px;border-radius:8px}
+.btn-xs{padding:4px 9px;font-size:11px;border-radius:6px}
+.btn-icon{padding:7px;border-radius:8px}
+
+/* ── Stats ── */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px}
+.stat-card{
+  background:white;border:1.5px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;
+  position:relative;overflow:hidden;transition:all var(--t);cursor:default
+}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--grad-accent,var(--grad))}
+.stat-card:hover{border-color:var(--border2);transform:translateY(-3px);box-shadow:var(--shadow)}
+.stat-num{font-family:var(--font-display);font-size:32px;font-weight:900;letter-spacing:-1px;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1}
+.stat-label{font-size:11px;color:var(--text3);margin-top:5px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em}
+.stat-emoji{position:absolute;top:16px;right:16px;font-size:24px;opacity:.2}
+
+/* ── Cards ── */
+.card{background:white;border:1.5px solid var(--border);border-radius:var(--r-lg)}
+.card:hover{border-color:var(--border2)}
+.card-pad{padding:22px 26px}
+.card-glow{background:linear-gradient(135deg,white 60%,rgba(253,244,255,0.8));border-color:rgba(192,38,211,0.2)}
+
+/* ── Chips ── */
+.chip{font-size:10.5px;font-family:var(--font-mono);padding:3px 8px;border-radius:20px;font-weight:500;display:inline-flex;align-items:center;gap:4px}
+.chip-purple{background:rgba(192,38,211,0.1);color:var(--p1);border:1px solid rgba(192,38,211,0.2)}
+.chip-pink{background:rgba(236,72,153,0.1);color:var(--pink3);border:1px solid rgba(236,72,153,0.2)}
+.chip-teal{background:rgba(16,185,129,0.1);color:var(--green);border:1px solid rgba(16,185,129,0.2)}
+.chip-amber{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(245,158,11,0.2)}
+.chip-green{background:var(--green-bg);color:var(--green);border:1px solid rgba(16,185,129,0.25)}
+.chip-red{background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,0.25)}
+
+/* ── Topic tree ── */
+.topic-tree{display:flex;flex-direction:column;gap:14px}
+.topic-node{background:white;border:1.5px solid var(--border);border-radius:var(--r-xl);overflow:hidden;transition:all var(--t)}
+.topic-node:hover{border-color:rgba(192,38,211,0.25);box-shadow:var(--shadow)}
+.topic-header{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;cursor:pointer;user-select:none;
+  background:linear-gradient(135deg,rgba(253,244,255,0.8),white)}
+.topic-header:hover{background:linear-gradient(135deg,rgba(252,232,255,0.9),rgba(253,244,255,0.7))}
+.topic-icon-box{width:38px;height:38px;border-radius:10px;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;box-shadow:0 4px 12px rgba(192,38,211,0.3)}
+.topic-name-text{font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--text)}
+.topic-body{padding:0 22px 18px;border-top:1.5px solid var(--border)}
+.topic-body.closed{display:none}
+.subtopic-list{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.subtopic-node{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden}
+.subtopic-header{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;cursor:pointer;transition:background var(--t)}
+.subtopic-header:hover{background:var(--surface)}
+.subtopic-dot-row{display:flex;align-items:center;gap:8px}
+.sdot{width:9px;height:9px;border-radius:50%;background:var(--grad);flex-shrink:0}
+.subtopic-name-text{font-size:13.5px;font-weight:600;color:var(--text)}
+.subtopic-body{padding:0 16px 12px;border-top:1.5px solid var(--border)}
+.subtopic-body.closed{display:none}
+.chapter-list{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.chapter-row{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;background:white;border:1.5px solid var(--border);border-radius:10px;transition:all var(--t)}
+.chapter-row:hover{border-color:var(--border2);box-shadow:0 2px 12px rgba(192,38,211,0.1)}
+.ch-name{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--text2)}
+.ch-num{font-family:var(--font-mono);font-size:10px;color:var(--text3);background:var(--surface);padding:2px 7px;border-radius:5px;border:1px solid var(--border)}
+
+/* ── Upload notes area ── */
+.upload-zone{
+  border:2px dashed rgba(192,38,211,0.35);border-radius:var(--r-lg);padding:28px 24px;
+  text-align:center;background:linear-gradient(135deg,rgba(253,244,255,0.5),rgba(252,232,255,0.3));
+  cursor:pointer;transition:all var(--t);position:relative
+}
+.upload-zone:hover,.upload-zone.drag-over{border-color:var(--p1);background:rgba(192,38,211,0.05);box-shadow:var(--glow)}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-icon{font-size:32px;margin-bottom:8px}
+.upload-title{font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--p2);margin-bottom:4px}
+.upload-sub{font-size:11.5px;color:var(--text3);font-family:var(--font-mono)}
+.format-hint{margin-top:14px;background:rgba(192,38,211,0.06);border:1px solid rgba(192,38,211,0.15);border-radius:10px;padding:12px 16px;text-align:left}
+.format-hint-title{font-size:11px;font-family:var(--font-mono);font-weight:600;color:var(--p1);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.format-example{font-family:var(--font-mono);font-size:11px;color:var(--text2);line-height:1.8;white-space:pre}
+.notes-preview{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:12px 16px;font-family:var(--font-mono);font-size:11.5px;color:var(--text2);max-height:160px;overflow-y:auto;white-space:pre-wrap;word-break:break-word}
+.parse-result{background:linear-gradient(135deg,rgba(16,185,129,0.06),rgba(16,185,129,0.02));border:1.5px solid rgba(16,185,129,0.25);border-radius:var(--r);padding:14px 18px;margin-top:10px}
+
+/* ── Forms ── */
+.form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.form-label{font-size:11px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.07em;color:var(--text2);font-weight:600}
+.form-control{background:var(--bg);border:1.5px solid var(--border2);border-radius:10px;color:var(--text);font-family:var(--font-body);font-size:13.5px;padding:10px 14px;transition:all var(--t);width:100%}
+.form-control:focus{outline:none;border-color:var(--p1);box-shadow:0 0 0 3px rgba(192,38,211,0.12)}
+.form-control::placeholder{color:var(--text3)}
+textarea.form-control{resize:vertical;min-height:80px;line-height:1.55}
+select.form-control{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a07ab8' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-color:var(--bg);padding-right:36px}
+option{background:white}
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* ── Modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(26,10,46,0.5);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px;animation:fadeIn .2s ease}
+.modal-overlay.hidden{display:none}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{background:white;border:1.5px solid rgba(192,38,211,0.2);border-radius:var(--r-2xl);padding:28px 32px;width:520px;max-width:100%;max-height:88vh;overflow-y:auto;animation:modalIn .25s cubic-bezier(.34,1.56,.64,1);box-shadow:0 30px 80px rgba(192,38,211,0.2),0 0 0 1px rgba(255,255,255,0.5)}
+@keyframes modalIn{from{opacity:0;transform:scale(.9) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.modal-title{font-family:var(--font-display);font-size:20px;font-weight:900;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.modal-tabs{display:flex;gap:4px;background:var(--surface);border-radius:10px;padding:4px;margin-bottom:20px}
+.modal-tab{flex:1;padding:8px;border-radius:7px;border:none;background:transparent;color:var(--text2);font-family:var(--font-body);font-size:13px;font-weight:600;cursor:pointer;transition:all var(--t)}
+.modal-tab.active{background:var(--grad);color:white;box-shadow:0 2px 8px rgba(192,38,211,0.3)}
+
+/* ── Test setup ── */
+.setup-wrap{max-width:560px}
+.setup-card{background:white;border:1.5px solid var(--border);border-radius:var(--r-2xl);overflow:hidden;box-shadow:var(--shadow)}
+.setup-hero{background:var(--grad);padding:28px 32px;position:relative;overflow:hidden}
+.setup-hero::before{content:'✦';position:absolute;right:24px;top:14px;font-size:48px;opacity:.15;color:white}
+.setup-hero::after{content:'✧';position:absolute;right:60px;bottom:10px;font-size:28px;opacity:.1;color:white}
+.setup-hero-title{font-family:var(--font-display);font-size:22px;font-weight:900;color:white;margin-bottom:4px}
+.setup-hero-sub{font-size:12px;color:rgba(255,255,255,0.75);font-family:var(--font-mono)}
+.setup-body{padding:28px 32px}
+.q-presets{display:flex;gap:8px;flex-wrap:wrap}
+.q-preset{padding:7px 15px;border-radius:8px;border:1.5px solid var(--border2);background:var(--bg);color:var(--text2);font-family:var(--font-mono);font-size:12px;font-weight:600;cursor:pointer;transition:all var(--t)}
+.q-preset:hover{border-color:var(--p1);color:var(--p1)}
+.q-preset.sel{background:var(--grad);border-color:transparent;color:white;box-shadow:0 2px 12px rgba(192,38,211,0.3)}
+
+/* ── Test taking ── */
+#view-test{padding:0}
+.test-topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 28px;
+  background:linear-gradient(135deg,rgba(192,38,211,0.95),rgba(126,34,206,0.95));
+  position:sticky;top:0;z-index:10;backdrop-filter:blur(20px);
+  box-shadow:0 4px 24px rgba(192,38,211,0.35)
+}
+.test-pill{font-family:var(--font-mono);font-size:11px;background:rgba(255,255,255,0.2);color:white;padding:5px 12px;border-radius:20px;border:1px solid rgba(255,255,255,0.3)}
+.test-q-label{font-size:12px;color:rgba(255,255,255,0.7);font-family:var(--font-mono)}
+.test-timer{font-family:var(--font-display);font-size:22px;font-weight:900;color:white;letter-spacing:-0.5px}
+.test-content{padding:32px 40px;max-width:720px;margin:0 auto}
+.progress-rail{display:flex;gap:4px;margin-bottom:28px;flex-wrap:wrap}
+.pseg{flex:1;min-width:10px;max-width:30px;height:5px;border-radius:3px;background:rgba(192,38,211,0.12);transition:all .3s;cursor:pointer}
+.pseg:hover{transform:scaleY(1.5)}
+.pseg.active{background:linear-gradient(90deg,var(--p1),var(--pink2))}
+.pseg.correct{background:var(--green)}
+.pseg.wrong{background:var(--red)}
+.pseg.answered{background:linear-gradient(90deg,var(--p1),var(--pink))}
+.q-card{background:white;border:1.5px solid var(--border);border-radius:var(--r-xl);padding:28px 32px;margin-bottom:20px;box-shadow:0 2px 20px rgba(192,38,211,0.08)}
+.q-num-tag{font-family:var(--font-mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.q-num-tag::before{content:'';display:block;width:24px;height:2px;background:var(--grad);border-radius:1px}
+.q-text{font-family:var(--font-display);font-size:19px;font-weight:700;color:var(--text);line-height:1.45;margin-bottom:22px}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt-btn{
+  display:flex;align-items:center;gap:14px;padding:13px 18px;
+  border:1.5px solid var(--border2);border-radius:12px;background:var(--bg);
+  color:var(--text);font-family:var(--font-body);font-size:14px;cursor:pointer;
+  text-align:left;width:100%;transition:all var(--t);position:relative;overflow:hidden
+}
+.opt-btn::before{content:'';position:absolute;inset:0;background:var(--grad);opacity:0;transition:opacity var(--t)}
+.opt-btn:hover:not(:disabled)::before{opacity:.04}
+.opt-btn:hover:not(:disabled){border-color:var(--p1);transform:translateX(4px);box-shadow:0 2px 16px rgba(192,38,211,0.12)}
+.opt-letter{width:30px;height:30px;border-radius:8px;background:var(--surface);border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--text2);flex-shrink:0;transition:all var(--t)}
+.opt-btn.selected .opt-letter{background:var(--grad);border-color:transparent;color:white}
+.opt-btn.correct{border-color:rgba(16,185,129,.5);background:var(--green-bg)}
+.opt-btn.correct .opt-letter{background:var(--green);border-color:transparent;color:white}
+.opt-btn.wrong{border-color:rgba(239,68,68,.5);background:var(--red-bg)}
+.opt-btn.wrong .opt-letter{background:var(--red);border-color:transparent;color:white}
+.opt-btn.reveal{border-color:rgba(16,185,129,.4);background:rgba(16,185,129,.04)}
+.opt-btn.reveal .opt-letter{border-color:rgba(16,185,129,.5);color:var(--green)}
+.opt-btn:disabled{cursor:default;transform:none!important}
+.expl-card{
+  background:linear-gradient(135deg,rgba(192,38,211,0.06),rgba(236,72,153,0.04));
+  border:1.5px solid rgba(192,38,211,0.2);border-radius:12px;padding:14px 18px;
+  margin-top:14px;font-size:13px;color:var(--text2);line-height:1.6;
+  display:flex;gap:10px;animation:fadeUp .2s ease
+}
+.expl-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+.test-nav-row{display:flex;align-items:center;gap:10px;margin-top:8px}
+
+/* ── Result ── */
+.result-hero{text-align:center;padding:36px 20px 28px;background:linear-gradient(135deg,rgba(253,244,255,0.8),rgba(252,231,243,0.6));border-bottom:1.5px solid var(--border)}
+.score-ring-wrap{position:relative;width:130px;height:130px;margin:0 auto 20px}
+.score-ring{width:130px;height:130px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative}
+.score-ring::before{content:'';position:absolute;inset:9px;border-radius:50%;background:white;z-index:0}
+.score-val{font-family:var(--font-display);font-size:28px;font-weight:900;position:relative;z-index:1;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.result-title-text{font-family:var(--font-display);font-size:26px;font-weight:900;margin-bottom:5px;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.result-sub-text{font-size:12px;color:var(--text3);font-family:var(--font-mono)}
+.result-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:22px 32px}
+.result-stat{background:white;border:1.5px solid var(--border);border-radius:var(--r);padding:14px;text-align:center;transition:all var(--t)}
+.result-stat:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:var(--shadow)}
+.result-stat-num{font-family:var(--font-display);font-size:24px;font-weight:900;line-height:1}
+.result-stat-label{font-size:10px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;margin-top:3px;letter-spacing:.05em}
+.review-section{padding:0 32px 32px}
+.review-title{font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--text2);margin-bottom:14px}
+.review-item{border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:10px;transition:border-color var(--t)}
+.review-item:hover{border-color:var(--border2)}
+.review-head{display:flex;align-items:flex-start;gap:10px;padding:13px 16px;cursor:pointer}
+.review-status{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:2px}
+.review-q{font-size:13px;color:var(--text);flex:1;line-height:1.5}
+.review-body{padding:0 16px 13px;border-top:1.5px solid var(--border)}
+.review-body.closed{display:none}
+
+/* ── History ── */
+.history-list{display:flex;flex-direction:column;gap:10px}
+.hist-item{background:white;border:1.5px solid var(--border);border-radius:var(--r-lg);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;transition:all var(--t)}
+.hist-item:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:var(--shadow)}
+.hist-meta{font-size:11.5px;color:var(--text3);font-family:var(--font-mono);margin-top:5px}
+.score-bar-wrap{width:100px;height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;margin-top:7px}
+.score-bar-fill{height:100%;border-radius:2px;background:var(--grad);transition:width .6s ease}
+
+/* ── Empty state ── */
+.empty{text-align:center;padding:60px 20px;color:var(--text3)}
+.empty-emoji{font-size:52px;margin-bottom:16px;animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.empty-title{font-family:var(--font-display);font-size:20px;color:var(--text2);margin-bottom:8px;font-weight:700}
+.empty-text{font-size:13px;max-width:280px;margin:0 auto 20px;line-height:1.6}
+
+/* ── Toast ── */
+.toast-wrap{position:fixed;bottom:24px;right:24px;z-index:500;display:flex;flex-direction:column;gap:8px}
+.toast{background:white;border:1.5px solid var(--border2);border-radius:12px;padding:10px 16px;font-size:13px;font-weight:500;color:var(--text);display:flex;align-items:center;gap:8px;animation:toastIn .25s ease;box-shadow:0 8px 32px rgba(192,38,211,0.2)}
+.toast.success{border-color:rgba(16,185,129,.35)}
+.toast.error{border-color:rgba(239,68,68,.35)}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+
+/* ── AI badge ── */
+.ai-badge{display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,rgba(192,38,211,0.1),rgba(236,72,153,0.08));border:1px solid rgba(192,38,211,0.25);color:var(--p1);border-radius:20px;font-size:10.5px;font-family:var(--font-mono);padding:3px 9px;font-weight:600}
+.ai-badge::before{content:'✦';animation:spin 4s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Progress bar for parsing ── */
+.parse-progress{width:100%;height:6px;background:var(--surface);border-radius:3px;overflow:hidden;margin:8px 0}
+.parse-fill{height:100%;background:var(--grad);border-radius:3px;transition:width .4s ease}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:rgba(192,38,211,0.3)}
+
+/* ── Divider ── */
+.divider{height:1.5px;background:var(--border);margin:14px 0}
+
+@media(max-width:860px){
+  .sidebar{width:210px}.main{margin-left:210px;padding:24px;max-width:calc(100vw - 210px)}
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:640px){
+  .sidebar{display:none}.main{margin-left:0;max-width:100vw;padding:18px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+<div style="display:flex;min-height:100vh">
+
+<!-- SIDEBAR -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-wordmark">PrepIQ</div>
+    <div class="logo-sub">Smart Quiz Engine</div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-label">Navigation</div>
+    <button class="nav-btn active" onclick="showView('dashboard')" id="nav-dashboard">
+      <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>
+      Dashboard
+    </button>
+    <button class="nav-btn" onclick="showView('manage')" id="nav-manage">
+      <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></span>
+      Topics
+      <span class="nav-badge" id="badge-topics">0</span>
+    </button>
+    <button class="nav-btn" onclick="showView('test-setup')" id="nav-test-setup">
+      <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+      Take Test
+    </button>
+    <button class="nav-btn" onclick="showView('history')" id="nav-history">
+      <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><polyline points="12 7 12 12 15 15"/></svg></span>
+      History
+      <span class="nav-badge" id="badge-history">0</span>
+    </button>
+    <div class="divider"></div>
+    <div class="nav-label">Quick</div>
+    <button class="nav-btn" onclick="showView('manage');setTimeout(()=>openAddTopicModal(),200)" id="nav-add">
+      <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
+      New Topic
+    </button>
+  </div>
+  <div class="sidebar-footer">
+    <div class="footer-stats" id="footer-info">0 topics · 0 questions</div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main class="main" id="main">
+
+<!-- DASHBOARD -->
+<div class="view active" id="view-dashboard">
+  <div class="page-header">
+    <div>
+      <div class="page-title" id="dash-title">Good morning ✨</div>
+      <div class="page-subtitle">Your prep stats at a glance</div>
+    </div>
+    <button class="btn btn-primary" onclick="showView('test-setup')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+      Start test
+    </button>
+  </div>
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-emoji">📚</div><div class="stat-num" id="s-topics">0</div><div class="stat-label">Topics</div></div>
+    <div class="stat-card" style="--grad-accent:linear-gradient(90deg,#ec4899,#db2777)"><div class="stat-emoji">❓</div><div class="stat-num" id="s-qs">0</div><div class="stat-label">Questions</div></div>
+    <div class="stat-card" style="--grad-accent:linear-gradient(90deg,#10b981,#059669)"><div class="stat-emoji">✅</div><div class="stat-num" id="s-tests">0</div><div class="stat-label">Tests taken</div></div>
+    <div class="stat-card" style="--grad-accent:linear-gradient(90deg,#f59e0b,#d97706)"><div class="stat-emoji">⭐</div><div class="stat-num" id="s-avg">—</div><div class="stat-label">Avg score</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="card card-pad card-glow">
+      <div style="font-family:var(--font-display);font-size:14px;font-weight:700;margin-bottom:14px;color:var(--text2)">Recent tests</div>
+      <div id="recent-tests"></div>
+    </div>
+    <div class="card card-pad">
+      <div style="font-family:var(--font-display);font-size:14px;font-weight:700;margin-bottom:14px;color:var(--text2)">Topic breakdown</div>
+      <div id="topic-breakdown"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MANAGE TOPICS -->
+<div class="view" id="view-manage">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Topics</div>
+      <div class="page-subtitle">Build your question bank manually or from notes</div>
+    </div>
+    <button class="btn btn-primary" onclick="openAddTopicModal()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      New topic
+    </button>
+  </div>
+  <div id="topic-tree"></div>
+</div>
+
+<!-- TEST SETUP -->
+<div class="view" id="view-test-setup">
+  <div class="page-header">
+    <div><div class="page-title">Configure test</div><div class="page-subtitle">Choose scope · set count · launch</div></div>
+  </div>
+  <div class="setup-wrap">
+    <div class="setup-card">
+      <div class="setup-hero">
+        <div class="setup-hero-title">Test parameters</div>
+        <div class="setup-hero-sub">Questions are randomly shuffled from your pool</div>
+      </div>
+      <div class="setup-body">
+        <div class="form-group"><label class="form-label">Topic</label><select class="form-control" id="sel-topic" onchange="refreshSubs()"></select></div>
+        <div class="form-group"><label class="form-label">Subtopic</label><select class="form-control" id="sel-sub" onchange="refreshChs()"></select></div>
+        <div class="form-group"><label class="form-label">Chapter</label><select class="form-control" id="sel-ch"></select></div>
+        <div class="form-group">
+          <label class="form-label">Number of questions</label>
+          <div class="q-presets" id="q-presets">
+            <button class="q-preset sel" onclick="setQP(this,5)">5</button>
+            <button class="q-preset" onclick="setQP(this,10)">10</button>
+            <button class="q-preset" onclick="setQP(this,15)">15</button>
+            <button class="q-preset" onclick="setQP(this,20)">20</button>
+            <button class="q-preset" onclick="setQP(this,30)">30</button>
+            <button class="q-preset" onclick="setQP(this,50)">50</button>
+          </div>
+          <input type="number" class="form-control" id="q-count" value="5" min="1" max="200" style="margin-top:8px;width:130px" placeholder="Custom #">
+        </div>
+        <p id="setup-msg" style="font-size:12px;color:var(--red);font-family:var(--font-mono);margin-bottom:10px"></p>
+        <button class="btn btn-primary" onclick="launchTest()" style="width:100%;justify-content:center;font-size:15px;padding:14px;border-radius:12px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+          Launch test
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TEST VIEW -->
+<div class="view" id="view-test" style="padding:0;margin:-36px -40px">
+  <div class="test-topbar">
+    <div style="display:flex;align-items:center;gap:12px">
+      <span class="test-pill" id="test-pill-label">Quiz</span>
+      <span class="test-q-label" id="test-q-label">Q 1 / 10</span>
+    </div>
+    <div style="text-align:center">
+      <div style="font-size:9px;color:rgba(255,255,255,0.6);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.08em">Elapsed</div>
+      <div class="test-timer" id="test-timer">0:00</div>
+    </div>
+    <button class="btn btn-sm" onclick="confirmSubmit()" style="background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.3);color:white;backdrop-filter:blur(4px)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      Submit
+    </button>
+  </div>
+  <div class="test-content">
+    <div class="progress-rail" id="progress-rail"></div>
+    <div id="q-zone"></div>
+    <div class="test-nav-row">
+      <button class="btn" id="btn-prev" onclick="navQ(-1)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>Prev
+      </button>
+      <button class="btn btn-primary" id="btn-next" onclick="navQ(1)">
+        Next<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+      <button class="btn btn-ghost" onclick="if(confirm('Abandon this test?'))showView('test-setup')" style="margin-left:auto;font-size:12px">Abandon</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESULT VIEW -->
+<div class="view" id="view-result">
+  <div class="result-hero">
+    <div class="score-ring-wrap">
+      <div class="score-ring" id="score-ring"><span class="score-val" id="score-val">0%</span></div>
+    </div>
+    <div class="result-title-text" id="result-headline">Well done!</div>
+    <div class="result-sub-text" id="result-subtext"></div>
+  </div>
+  <div class="result-stats-grid" id="result-stats"></div>
+  <div style="display:flex;justify-content:center;gap:10px;padding:0 32px 20px">
+    <button class="btn btn-primary" onclick="showView('test-setup')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+      New test
+    </button>
+    <button class="btn" onclick="showView('dashboard')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </button>
+  </div>
+  <div class="review-section">
+    <div class="review-title">Answer review</div>
+    <div id="review-list"></div>
+  </div>
+</div>
+
+<!-- HISTORY -->
+<div class="view" id="view-history">
+  <div class="page-header">
+    <div><div class="page-title">History</div><div class="page-subtitle">All test sessions</div></div>
+    <button class="btn btn-danger btn-sm" onclick="clearHistory()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg>
+      Clear all
+    </button>
+  </div>
+  <div id="history-wrap"></div>
+</div>
+
+</main>
+</div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay hidden" id="modal-overlay" onclick="handleOverlay(event)">
+  <div class="modal" id="modal-box" onclick="event.stopPropagation()">
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<!-- TOASTS -->
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<script>
+// ──────────────────────────────────────────────────────────
+// STATE
+// ──────────────────────────────────────────────────────────
+let S={topics:[],sessions:[]};
+(()=>{try{const r=localStorage.getItem('prepiq3');if(r){const p=JSON.parse(r);S.topics=p.topics||[];S.sessions=p.sessions||[];}}catch(e){}})();
+function save(){try{localStorage.setItem('prepiq3',JSON.stringify(S));}catch(e){}}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+// ──────────────────────────────────────────────────────────
+// VIEW ROUTING
+// ──────────────────────────────────────────────────────────
+function showView(v){
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('active'));
+  const el=document.getElementById('view-'+v);
+  if(el)el.classList.add('active');
+  const nav=document.getElementById('nav-'+(v==='test'?'test-setup':v==='result'?'test-setup':v));
+  if(nav)nav.classList.add('active');
+  const main=document.getElementById('main');
+  if(v==='test'){main.style.padding='0'}else{main.style.padding='36px 40px'}
+  if(v==='dashboard')renderDashboard();
+  if(v==='manage')renderTopics();
+  if(v==='test-setup')populateSetup();
+  if(v==='history')renderHistory();
+  updateSidebar();
+}
+
+function updateSidebar(){
+  const tc=S.topics.length,qc=allQs().length;
+  document.getElementById('badge-topics').textContent=tc;
+  document.getElementById('badge-history').textContent=S.sessions.length;
+  document.getElementById('footer-info').textContent=`${tc} topic${tc!==1?'s':''} · ${qc} Q${qc!==1?'s':''}`;
+}
+
+// ──────────────────────────────────────────────────────────
+// DATA HELPERS
+// ──────────────────────────────────────────────────────────
+function allQs(){return S.topics.flatMap(t=>t.subtopics.flatMap(s=>s.chapters.flatMap(c=>c.questions)))}
+function topicQs(tid){return(S.topics.find(t=>t.id===tid)||{subtopics:[]}).subtopics.flatMap(s=>s.chapters.flatMap(c=>c.questions))}
+function subQs(tid,sid){return(S.topics.find(t=>t.id===tid)?.subtopics.find(s=>s.id===sid)||{chapters:[]}).chapters.flatMap(c=>c.questions)}
+function chQs(tid,sid,cid){return S.topics.find(t=>t.id===tid)?.subtopics.find(s=>s.id===sid)?.chapters.find(c=>c.id===cid)?.questions||[]}
+
+// ──────────────────────────────────────────────────────────
+// DASHBOARD
+// ──────────────────────────────────────────────────────────
+function renderDashboard(){
+  const h=new Date().getHours();
+  const greet=h<12?'Good morning ✨':h<17?'Good afternoon ☀️':'Good evening 🌙';
+  document.getElementById('dash-title').textContent=greet;
+  document.getElementById('s-topics').textContent=S.topics.length;
+  document.getElementById('s-qs').textContent=allQs().length;
+  document.getElementById('s-tests').textContent=S.sessions.length;
+  const avg=S.sessions.length?Math.round(S.sessions.reduce((a,s)=>a+(s.correct/s.total*100),0)/S.sessions.length)+'%':'—';
+  document.getElementById('s-avg').textContent=avg;
+  const rt=document.getElementById('recent-tests');
+  rt.innerHTML=S.sessions.length===0?`<div style="color:var(--text3);font-size:12px;font-family:var(--font-mono)">No tests yet</div>`:
+    S.sessions.slice(0,5).map(s=>{const p=Math.round(s.correct/s.total*100);const c=p>=80?'var(--green)':p>=50?'var(--amber)':'var(--red)';
+    return`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1.5px solid var(--border)">
+      <div><div style="font-size:12.5px;font-weight:600">${esc(s.topic)}</div><div style="font-size:10.5px;color:var(--text3);font-family:var(--font-mono)">${s.date}</div></div>
+      <span style="font-family:var(--font-display);font-size:14px;font-weight:900;color:${c}">${p}%</span></div>`;}).join('');
+  const tb=document.getElementById('topic-breakdown');
+  tb.innerHTML=S.topics.length===0?`<div style="color:var(--text3);font-size:12px;font-family:var(--font-mono)">No topics yet</div>`:
+    S.topics.slice(0,5).map(t=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1.5px solid var(--border)">
+      <span style="font-size:12.5px;font-weight:600">${esc(t.name)}</span>
+      <span class="chip chip-purple">${topicQs(t.id).length} Qs</span></div>`).join('');
+}
+
+// ──────────────────────────────────────────────────────────
+// TOPIC TREE RENDER
+// ──────────────────────────────────────────────────────────
+function renderTopics(){
+  const wrap=document.getElementById('topic-tree');
+  if(!S.topics.length){wrap.innerHTML=`<div class="empty"><div class="empty-emoji">📚</div><div class="empty-title">No topics yet</div><div class="empty-text">Add a topic and start building your question bank manually or by uploading notes.</div><button class="btn btn-primary" onclick="openAddTopicModal()">Create first topic</button></div>`;return;}
+  wrap.innerHTML=`<div class="topic-tree">${S.topics.map(t=>topicNodeHTML(t)).join('')}</div>`;
+}
+
+function topicNodeHTML(t){
+  const qc=topicQs(t.id).length;
+  return`<div class="topic-node" id="tn-${t.id}">
+    <div class="topic-header" onclick="toggleSection('tb-${t.id}')">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="topic-icon-box">📖</div>
+        <div>
+          <div class="topic-name-text">${esc(t.name)}</div>
+          <div style="display:flex;gap:6px;margin-top:3px"><span class="chip chip-purple">${qc} Qs</span><span class="chip chip-pink">${t.subtopics.length} subtopics</span></div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px" onclick="event.stopPropagation()">
+        <button class="btn btn-sm" onclick="openModal('upload-notes','${t.id}')"><span class="ai-badge" style="margin-right:4px">AI</span>Upload notes</button>
+        <button class="btn btn-sm" onclick="openModal('add-sub','${t.id}')">+ Subtopic</button>
+        <button class="btn btn-sm btn-danger btn-icon" onclick="delTopic('${t.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg></button>
+      </div>
+    </div>
+    <div class="topic-body closed" id="tb-${t.id}">
+      ${!t.subtopics.length?`<div style="padding:14px 0;color:var(--text3);font-size:12px;font-family:var(--font-mono)">No subtopics — click "+ Subtopic" to add one.</div>`:
+      `<div class="subtopic-list">${t.subtopics.map(s=>subNodeHTML(t.id,s)).join('')}</div>`}
+    </div>
+  </div>`;
+}
+
+function subNodeHTML(tid,s){
+  const qc=subQs(tid,s.id).length;
+  return`<div class="subtopic-node">
+    <div class="subtopic-header" onclick="toggleSection('stb-${s.id}')">
+      <div class="subtopic-dot-row"><div class="sdot"></div><span class="subtopic-name-text">${esc(s.name)}</span><span class="chip chip-pink">${qc} Qs</span></div>
+      <div style="display:flex;gap:5px" onclick="event.stopPropagation()">
+        <button class="btn btn-xs" onclick="openModal('add-ch','${tid}','${s.id}')">+ Chapter</button>
+        <button class="btn btn-xs btn-danger btn-icon" onclick="delSub('${tid}','${s.id}')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></button>
+      </div>
+    </div>
+    <div class="subtopic-body closed" id="stb-${s.id}">
+      ${!s.chapters.length?`<div style="padding:8px 0;color:var(--text3);font-size:11px;font-family:var(--font-mono)">No chapters yet.</div>`:
+      `<div class="chapter-list">${s.chapters.map((c,i)=>chRowHTML(tid,s.id,c,i+1)).join('')}</div>`}
+    </div>
+  </div>`;
+}
+
+function chRowHTML(tid,sid,c,n){
+  const qc=chQs(tid,sid,c.id).length;
+  return`<div class="chapter-row">
+    <div class="ch-name"><span class="ch-num">Ch ${n}</span>${esc(c.name)}<span class="chip chip-amber">${qc} Qs</span></div>
+    <div style="display:flex;gap:5px">
+      <button class="btn btn-xs" onclick="openModal('add-q','${tid}','${sid}','${c.id}')">+ Question</button>
+      <button class="btn btn-xs" onclick="openModal('view-qs','${tid}','${sid}','${c.id}')">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>View
+      </button>
+      <button class="btn btn-xs btn-danger btn-icon" onclick="delCh('${tid}','${sid}','${c.id}')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></button>
+    </div>
+  </div>`;
+}
+
+function toggleSection(id){
+  const el=document.getElementById(id);if(!el)return;
+  el.classList.toggle('closed');
+}
+
+// ──────────────────────────────────────────────────────────
+// MODALS
+// ──────────────────────────────────────────────────────────
+let _modalArgs=[];
+function openAddTopicModal(){openModal('add-topic')}
+
+function openModal(type,...args){
+  _modalArgs=[type,...args];
+  const body=document.getElementById('modal-body');
+  document.getElementById('modal-overlay').classList.remove('hidden');
+
+  if(type==='add-topic'){
+    body.innerHTML=`<div class="modal-header"><div class="modal-title">New topic</div><button class="btn btn-ghost btn-icon" onclick="closeModal()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="form-group"><label class="form-label">Topic name</label><input class="form-control" id="m-name" placeholder="e.g. Machine Learning" autofocus></div>
+    <div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="doAddTopic()">Create</button></div>`;
+  }
+  else if(type==='add-sub'){
+    body.innerHTML=`<div class="modal-header"><div class="modal-title">New subtopic</div><button class="btn btn-ghost btn-icon" onclick="closeModal()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="form-group"><label class="form-label">Subtopic name</label><input class="form-control" id="m-name" placeholder="e.g. Supervised Learning" autofocus></div>
+    <div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="doAddSub('${args[0]}')">Create</button></div>`;
+  }
+  else if(type==='add-ch'){
+    body.innerHTML=`<div class="modal-header"><div class="modal-title">New chapter</div><button class="btn btn-ghost btn-icon" onclick="closeModal()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="form-group"><label class="form-label">Chapter name</label><input class="form-control" id="m-name" placeholder="e.g. Gradient Descent" autofocus></div>
+    <div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="doAddCh('${args[0]}','${args[1]}')">Create</button></div>`;
+  }
+  else if(type==='add-q'){
+    body.innerHTML=`<div class="modal-header"><div class="modal-title">Add question</div><button class="btn btn-ghost btn-icon" onclick="closeModal()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="form-group"><label class="form-label">Question</label><textarea class="form-control" id="m-q" placeholder="Enter the question..."></textarea></div>
+    <div class="options-grid">
+      <div class="form-group"><label class="form-label">Option A</label><input class="form-control" id="m-a" placeholder="Option A"></div>
+      <div class="form-group"><label class="form-label">Option B</label><input class="form-control" id="m-b" placeholder="Option B"></div>
+      <div class="form-group"><label class="form-label">Option C</label><input class="form-control" id="m-c" placeholder="Option C"></div>
+      <div class="form-group"><label class="form-label">Option D</label><input class="form-control" id="m-d" placeholder="Option D"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Correct answer</label><select class="form-control" id="m-correct"><option value="0">A</option><option value="1">B</option><option value="2">C</option><option value="3">D</option></select></div>
+    <div class="form-group"><label class="form-label">Explanation <span style="font-size:10px;color:var(--text3);font-weight:400">(recommended)</span></label><textarea class="form-control" id="m-exp" style="min-height:55px" placeholder="Brief explanation..."></textarea></div>
+    <div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="doAddQ('${args[0]}','${args[1]}','${args[2]}')">Add</button></div>`;
+  }
+  else if(type==='view-qs'){
+    const qs=chQs(args[0],args[1],args[2]);
+    const ch=S.topics.find(t=>t.id===args[0])?.subtopics.find(s=>s.id===args[1])?.chapters.find(c=>c.id===args[2]);
+    body.innerHTML=`<div class="modal-header"><div class="modal-title">${esc(ch?.name)} <span style="font-weight:400;color:var(--text3);font-size:14px">(${qs.length})</span></div><button class="btn btn-ghost btn-icon" onclick="closeModal()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    ${!qs.length?`<div style="color:var(--text3);font-size:13px;padding:16px 0;text-align:center">No questions yet.</div>`:
+    qs.map((q,i)=>`<div style="border:1.5px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:8px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:7px">${i+1}. ${esc(q.q)}</div>
+      ${q.opts.map((o,j)=>`<div style="font-size:12px;padding:2px 0;color:${j===q.correct?'var(--green)':'var(--text3)'}">
+        ${'ABCD'[j]}. ${esc(o)} ${j===q.correct?'✓':''}</div>`).join('')}
+      ${q.exp?`<div style="font-size:11px;color:var(--p1);margin-top:6px;font-family:var(--font-mono)">💡 ${esc(q.exp)}</div>`:''}
+      <button class="btn btn-xs btn-danger" style="margin-top:7px" onclick="doDelQ('${args[0]}','${args[1]}','${args[2]}','${q.id}')">Delete</button>
+    </div>`).join('')}
+    <div style="text-align:right;margin-top:10px"><button class="btn btn-primary btn-sm" onclick="closeModal();openModal('add-q','${args[0]}','${args[1]}','${args[2]}')">+ Add question</button></div>`;
+  }
+  else if(type==='upload-notes'){
+    const tid=args[0];
+    const tp=S.topics.find(t=>t.id===tid);
+    const subs=tp?tp.subtopics:[];
+    body.innerHTML=`<div class="modal-header"><div class="modal-title">Import from notes <span class="ai-badge" style="font-size:11px">AI Parse</span></div><button class="btn btn-ghost btn-icon" onclick="closeModal()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Upload a <strong>.txt</strong> or <strong>.md</strong> notes file. PrepIQ will auto-detect questions from the structured format below.</p>
+    <div class="format-hint">
+      <div class="format-hint-title">Expected format in your file</div>
+      <div class="format-example">Q: What is gradient descent?
+A: An optimization algorithm
+B: A neural network layer
+C: A loss function
+D: A data augmentation method
+Answer: A
+Explanation: Gradient descent minimises the loss function.
+
+Q: What does CNN stand for?
+...</div>
+    </div>
+    <div class="divider"></div>
+    <div class="form-group">
+      <label class="form-label">Add to subtopic</label>
+      <select class="form-control" id="upload-sub">
+        <option value="new">➕ Create new subtopic for these notes</option>
+        ${subs.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}
+      </select>
+    </div>
+    <div id="new-sub-row" class="form-group">
+      <label class="form-label">New subtopic name</label>
+      <input class="form-control" id="upload-sub-name" placeholder="e.g. Chapter 3 notes">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Chapter name</label>
+      <input class="form-control" id="upload-ch-name" placeholder="e.g. Uploaded notes">
+    </div>
+    <div class="upload-zone" id="upload-zone">
+      <input type="file" id="notes-file" accept=".txt,.md,.text" onchange="handleFileSelect(event)">
+      <div class="upload-icon">📄</div>
+      <div class="upload-title">Drop your notes file here</div>
+      <div class="upload-sub">.txt or .md · or paste below</div>
+    </div>
+    <div class="form-group" style="margin-top:12px">
+      <label class="form-label">Or paste notes directly</label>
+      <textarea class="form-control" id="notes-paste" style="min-height:100px" placeholder="Paste your Q/A notes here..."></textarea>
+    </div>
+    <div id="parse-feedback" style="display:none"></div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:6px">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="parseAndImport('${tid}')">
+        <span class="ai-badge" style="background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.3);color:white">AI</span>
+        Parse & Import
+      </button>
+    </div>`;
+    document.getElementById('upload-sub').addEventListener('change',function(){
+      document.getElementById('new-sub-row').style.display=this.value==='new'?'flex':'none';
+    });
+  }
+  setTimeout(()=>{const i=document.getElementById('m-name');if(i)i.focus();},100);
+}
+
+function handleFileSelect(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{document.getElementById('notes-paste').value=ev.target.result;toast('File loaded: '+f.name,'success');}
+  r.readAsText(f);
+}
+
+function closeModal(){document.getElementById('modal-overlay').classList.add('hidden')}
+function handleOverlay(e){if(e.target===document.getElementById('modal-overlay'))closeModal()}
+
+// ──────────────────────────────────────────────────────────
+// CRUD
+// ──────────────────────────────────────────────────────────
+function doAddTopic(){const n=document.getElementById('m-name').value.trim();if(!n)return;S.topics.push({id:uid(),name:n,subtopics:[]});save();closeModal();renderTopics();updateSidebar();toast('Topic created','success')}
+function delTopic(id){if(!confirm('Delete this topic and all data?'))return;S.topics=S.topics.filter(t=>t.id!==id);save();renderTopics();updateSidebar();toast('Deleted')}
+function doAddSub(tid){const n=document.getElementById('m-name').value.trim();if(!n)return;const t=S.topics.find(x=>x.id===tid);if(t){t.subtopics.push({id:uid(),name:n,chapters:[]});save();closeModal();renderTopics();updateSidebar();toast('Subtopic created','success')}}
+function delSub(tid,sid){if(!confirm('Delete subtopic?'))return;const t=S.topics.find(x=>x.id===tid);if(t){t.subtopics=t.subtopics.filter(s=>s.id!==sid);save();renderTopics();updateSidebar();toast('Deleted')}}
+function doAddCh(tid,sid){const n=document.getElementById('m-name').value.trim();if(!n)return;const s=S.topics.find(t=>t.id===tid)?.subtopics.find(s=>s.id===sid);if(s){s.chapters.push({id:uid(),name:n,questions:[]});save();closeModal();renderTopics();updateSidebar();toast('Chapter created','success')}}
+function delCh(tid,sid,cid){if(!confirm('Delete chapter?'))return;const s=S.topics.find(t=>t.id===tid)?.subtopics.find(s=>s.id===sid);if(s){s.chapters=s.chapters.filter(c=>c.id!==cid);save();renderTopics();updateSidebar();toast('Deleted')}}
+function doAddQ(tid,sid,cid){
+  const q=document.getElementById('m-q').value.trim();
+  const opts=['m-a','m-b','m-c','m-d'].map(id=>document.getElementById(id).value.trim());
+  const correct=parseInt(document.getElementById('m-correct').value);
+  const exp=document.getElementById('m-exp').value.trim();
+  if(!q||opts.some(o=>!o)){toast('Fill in question + all 4 options','error');return}
+  const c=S.topics.find(t=>t.id===tid)?.subtopics.find(s=>s.id===sid)?.chapters.find(c=>c.id===cid);
+  if(c){c.questions.push({id:uid(),q,opts,correct,exp});save();closeModal();renderTopics();updateSidebar();toast('Question added','success')}
+}
+function doDelQ(tid,sid,cid,qid){
+  const c=S.topics.find(t=>t.id===tid)?.subtopics.find(s=>s.id===sid)?.chapters.find(c=>c.id===cid);
+  if(c){c.questions=c.questions.filter(q=>q.id!==qid);save();openModal('view-qs',tid,sid,cid);toast('Deleted')}
+}
+
+// ──────────────────────────────────────────────────────────
+// NOTES PARSER
+// ──────────────────────────────────────────────────────────
+function parseNotes(raw){
+  const qs=[];
+  // Split on blank lines between questions, or on lines starting with Q:
+  const blocks=raw.split(/\n\s*\n/).map(b=>b.trim()).filter(Boolean);
+  for(const block of blocks){
+    const lines=block.split('\n').map(l=>l.trim()).filter(Boolean);
+    let q='',opts=[null,null,null,null],correct=-1,exp='';
+    for(const line of lines){
+      const lup=line.toUpperCase();
+      if(/^Q[:\.\)]\s*/i.test(line)){q=line.replace(/^Q[:\.\)]\s*/i,'').trim()}
+      else if(/^A[:\.\)]\s*/i.test(line)&&!/^ANS/i.test(line)){opts[0]=line.replace(/^A[:\.\)]\s*/i,'').trim()}
+      else if(/^B[:\.\)]\s*/i.test(line)){opts[1]=line.replace(/^B[:\.\)]\s*/i,'').trim()}
+      else if(/^C[:\.\)]\s*/i.test(line)){opts[2]=line.replace(/^C[:\.\)]\s*/i,'').trim()}
+      else if(/^D[:\.\)]\s*/i.test(line)){opts[3]=line.replace(/^D[:\.\)]\s*/i,'').trim()}
+      else if(/^(answer|ans|correct)[:\.\)]\s*/i.test(line)){
+        const val=line.replace(/^(answer|ans|correct)[:\.\)]\s*/i,'').trim().toUpperCase();
+        correct={'A':0,'B':1,'C':2,'D':3}[val[0]]??-1;
+      }
+      else if(/^(expl|explanation|note|reason)[:\.\)]\s*/i.test(line)){
+        exp=line.replace(/^(expl|explanation|note|reason)[:\.\)]\s*/i,'').trim();
+      }
+    }
+    if(q&&opts.every(Boolean)&&correct>=0){qs.push({id:uid(),q,opts,correct,exp})}
+  }
+  return qs;
+}
+
+function parseAndImport(tid){
+  const text=(document.getElementById('notes-paste').value||'').trim();
+  if(!text){toast('Please provide some notes to parse','error');return}
+  const fb=document.getElementById('parse-feedback');fb.style.display='block';
+  fb.innerHTML=`<div style="font-size:12px;color:var(--text2);font-family:var(--font-mono);padding:8px 0"><div class="parse-progress"><div class="parse-fill" id="pf" style="width:0%"></div></div>Parsing…</div>`;
+  let prog=0;const pfi=setInterval(()=>{prog+=25;document.getElementById('pf').style.width=Math.min(prog,90)+'%';if(prog>=90)clearInterval(pfi);},120);
+  setTimeout(()=>{
+    clearInterval(pfi);document.getElementById('pf').style.width='100%';
+    const qs=parseNotes(text);
+    if(!qs.length){
+      fb.innerHTML=`<div class="parse-result" style="background:var(--red-bg);border-color:rgba(239,68,68,.25)"><strong style="color:var(--red)">⚠ No questions found.</strong><br><span style="font-size:12px;color:var(--text2)">Make sure your file follows the Q:/A:/B:/C:/D:/Answer: format.</span></div>`;return;
+    }
+    const tp=S.topics.find(t=>t.id===tid);if(!tp)return;
+    let sid=document.getElementById('upload-sub').value;
+    if(sid==='new'){
+      const sn=(document.getElementById('upload-sub-name').value.trim())||'Imported notes';
+      const newSub={id:uid(),name:sn,chapters:[]};tp.subtopics.push(newSub);sid=newSub.id;
+    }
+    const sub=tp.subtopics.find(s=>s.id===sid);if(!sub)return;
+    const chn=(document.getElementById('upload-ch-name').value.trim())||'Imported '+new Date().toLocaleDateString();
+    const newCh={id:uid(),name:chn,questions:qs};
+    sub.chapters.push(newCh);save();
+    fb.innerHTML=`<div class="parse-result"><strong style="color:var(--green)">✓ ${qs.length} questions imported!</strong><br><span style="font-size:12px;color:var(--text2)">Added to "${sub.name}" → "${newCh.name}".</span></div>`;
+    updateSidebar();
+    setTimeout(()=>{closeModal();renderTopics();toast(`${qs.length} questions imported successfully! 🎉`,'success')},1400);
+  },600);
+}
+
+// ──────────────────────────────────────────────────────────
+// TEST SETUP
+// ──────────────────────────────────────────────────────────
+function populateSetup(){
+  const ts=document.getElementById('sel-topic');
+  ts.innerHTML=S.topics.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');
+  if(!S.topics.length)ts.innerHTML='<option value="">No topics — add some first</option>';
+  refreshSubs();
+}
+function refreshSubs(){
+  const tid=document.getElementById('sel-topic').value;
+  const tp=S.topics.find(t=>t.id===tid);
+  document.getElementById('sel-sub').innerHTML='<option value="all">All subtopics</option>'+(tp?tp.subtopics.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join(''):'');
+  refreshChs();
+}
+function refreshChs(){
+  const tid=document.getElementById('sel-topic').value;
+  const sid=document.getElementById('sel-sub').value;
+  const tp=S.topics.find(t=>t.id===tid);
+  let chs=[];
+  if(tp){chs=sid==='all'?tp.subtopics.flatMap(s=>s.chapters):(tp.subtopics.find(s=>s.id===sid)?.chapters||[]);}
+  document.getElementById('sel-ch').innerHTML='<option value="all">All chapters</option>'+chs.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+}
+function setQP(btn,n){
+  document.querySelectorAll('.q-preset').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  document.getElementById('q-count').value=n;
+}
+
+function launchTest(){
+  const tid=document.getElementById('sel-topic').value;
+  const sid=document.getElementById('sel-sub').value;
+  const cid=document.getElementById('sel-ch').value;
+  const count=parseInt(document.getElementById('q-count').value)||5;
+  const msg=document.getElementById('setup-msg');
+  if(!tid||!S.topics.length){msg.textContent='Add topics and questions first.';return}
+  const tp=S.topics.find(t=>t.id===tid);
+  let pool=[];
+  tp.subtopics.forEach(s=>{
+    if(sid!=='all'&&s.id!==sid)return;
+    s.chapters.forEach(c=>{
+      if(cid!=='all'&&c.id!==cid)return;
+      pool=pool.concat(c.questions.map(q=>({...q,chName:c.name,stName:s.name})));
+    });
+  });
+  if(!pool.length){msg.textContent='No questions in selected scope.';return}
+  msg.textContent='';
+  const qs=[...pool].sort(()=>Math.random()-.5).slice(0,Math.min(count,pool.length));
+  window._ct={questions:qs,current:0,answers:{},startTime:Date.now(),topicName:tp.name};
+  clearInterval(window._timerI);
+  window._timerI=setInterval(()=>{
+    const e=Math.floor((Date.now()-window._ct.startTime)/1000);
+    const m=Math.floor(e/60),s=e%60;
+    const el=document.getElementById('test-timer');
+    if(el)el.textContent=m+':'+(s<10?'0':'')+s;
+  },1000);
+  showView('test');renderQ();
+}
+
+// ──────────────────────────────────────────────────────────
+// TEST ENGINE
+// ──────────────────────────────────────────────────────────
+function renderQ(){
+  const ct=window._ct;if(!ct)return;
+  const {questions,current,answers}=ct;
+  const q=questions[current];const L=['A','B','C','D'];const a=answers[q.id];
+  document.getElementById('test-pill-label').textContent=ct.topicName;
+  document.getElementById('test-q-label').textContent=`Q ${current+1} / ${questions.length}`;
+  const rail=document.getElementById('progress-rail');
+  rail.innerHTML=questions.map((qq,i)=>{
+    let cls='pseg';
+    if(i===current)cls+=' active';
+    else if(answers[qq.id]!==undefined)cls+=answers[qq.id]===qq.correct?' correct':' wrong';
+    return`<div class="${cls}" onclick="jumpQ(${i})" title="Q${i+1}"></div>`;
+  }).join('');
+  document.getElementById('q-zone').innerHTML=`<div class="q-card">
+    <div class="q-num-tag">Question ${current+1} of ${questions.length}${q.chName?' · '+esc(q.chName):''}</div>
+    <div class="q-text">${esc(q.q)}</div>
+    <div class="opts">${q.opts.map((o,i)=>{
+      let cls='opt-btn';
+      if(a!==undefined){if(i===q.correct)cls+=' reveal';if(a===i&&i!==q.correct)cls+=' wrong';if(a===i&&i===q.correct)cls+=' correct';}
+      return`<button class="${cls}" ${a!==undefined?'disabled':''} onclick="pickAnswer('${q.id}',${i})">
+        <span class="opt-letter">${L[i]}</span>${esc(o)}</button>`;
+    }).join('')}</div>
+    ${a!==undefined&&q.exp?`<div class="expl-card"><span class="expl-icon">💡</span><div>${esc(q.exp)}</div></div>`:''}</div>`;
+  document.getElementById('btn-prev').disabled=current===0;
+  document.getElementById('btn-next').textContent=current===questions.length-1?'Review all ›':'Next ›';
+}
+
+function pickAnswer(qid,i){if(!window._ct)return;window._ct.answers[qid]=i;renderQ()}
+function jumpQ(i){window._ct.current=i;renderQ()}
+function navQ(d){
+  const ct=window._ct;if(!ct)return;
+  const nxt=ct.current+d;
+  if(nxt>=0&&nxt<ct.questions.length){ct.current=nxt;renderQ();}
+  else if(d===1)confirmSubmit();
+}
+function confirmSubmit(){
+  const ct=window._ct;if(!ct)return;
+  const answered=Object.keys(ct.answers).length;
+  if(answered<ct.questions.length&&!confirm(`Answered ${answered}/${ct.questions.length}. Submit anyway?`))return;
+  submitTest();
+}
+function submitTest(){
+  clearInterval(window._timerI);
+  const ct=window._ct;
+  const elapsed=Math.floor((Date.now()-ct.startTime)/1000);
+  let correct=0,wrong=0,skipped=0;
+  ct.questions.forEach(q=>{const a=ct.answers[q.id];if(a===undefined)skipped++;else if(a===q.correct)correct++;else wrong++;});
+  const sess={id:uid(),date:new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}),topic:ct.topicName,total:ct.questions.length,correct,wrong,skipped,time:elapsed,questions:ct.questions,answers:ct.answers};
+  S.sessions.unshift(sess);save();
+  renderResult(sess);showView('result');
+}
+
+// ──────────────────────────────────────────────────────────
+// RESULT
+// ──────────────────────────────────────────────────────────
+function renderResult(s){
+  const pct=Math.round(s.correct/s.total*100);
+  const deg=pct/100*360;
+  const ring=document.getElementById('score-ring');
+  const col=pct>=80?'#10b981':pct>=50?'#f59e0b':'#ef4444';
+  ring.style.background=`conic-gradient(${col} 0deg,${col} ${deg}deg,#f5d6ff ${deg}deg)`;
+  document.getElementById('score-val').textContent=pct+'%';
+  document.getElementById('result-headline').textContent=pct>=90?'Outstanding! 🏆':pct>=75?'Great work! 🎉':pct>=50?'Good effort! 📈':'Keep going! 💪';
+  const m=Math.floor(s.time/60),sec=s.time%60;
+  document.getElementById('result-subtext').textContent=`${s.total} questions · ${m}m ${sec}s · ${s.date}`;
+  const rsg=document.getElementById('result-stats');
+  const items=[{n:s.correct,l:'Correct',c:'var(--green)'},{n:s.wrong,l:'Wrong',c:'var(--red)'},{n:s.skipped,l:'Skipped',c:'var(--amber)'},{n:pct+'%',l:'Score',c:pct>=80?'var(--green)':pct>=50?'var(--amber)':'var(--red)'}];
+  rsg.innerHTML=items.map(x=>`<div class="result-stat"><div class="result-stat-num" style="color:${x.c}">${x.n}</div><div class="result-stat-label">${x.l}</div></div>`).join('');
+  const rl=document.getElementById('review-list');
+  rl.innerHTML=s.questions.map((q,i)=>{
+    const a=s.answers[q.id];const L=['A','B','C','D'];
+    const ok=a===q.correct,sk=a===undefined;
+    const icon=sk?'⏭':ok?'✓':'✗';
+    const ibg=sk?'var(--amber-bg)':ok?'var(--green-bg)':'var(--red-bg)';
+    const icol=sk?'var(--amber)':ok?'var(--green)':'var(--red)';
+    return`<div class="review-item"><div class="review-head" onclick="toggleSection('rb-${q.id}')">
+      <div class="review-status" style="background:${ibg};color:${icol}">${icon}</div>
+      <div class="review-q">${i+1}. ${esc(q.q)}</div></div>
+      <div class="review-body closed" id="rb-${q.id}">
+        ${q.opts.map((o,j)=>`<div style="padding:4px 8px;font-size:12px;border-radius:6px;margin:3px 0;background:${j===q.correct?'var(--green-bg)':a===j&&j!==q.correct?'var(--red-bg)':'transparent'};color:${j===q.correct?'var(--green)':a===j&&j!==q.correct?'var(--red)':'var(--text2)'}">
+          ${L[j]}. ${esc(o)} ${j===q.correct?'✓':a===j&&j!==q.correct?'✗':''}</div>`).join('')}
+        ${q.exp?`<div class="expl-card" style="margin-top:8px"><span class="expl-icon">💡</span><div>${esc(q.exp)}</div></div>`:''}
+      </div></div>`;
+  }).join('');
+}
+
+// ──────────────────────────────────────────────────────────
+// HISTORY
+// ──────────────────────────────────────────────────────────
+function renderHistory(){
+  const wrap=document.getElementById('history-wrap');
+  if(!S.sessions.length){wrap.innerHTML=`<div class="empty"><div class="empty-emoji">📊</div><div class="empty-title">No history yet</div><div class="empty-text">Take a test to see your results here.</div><button class="btn btn-primary" onclick="showView('test-setup')">Take a test</button></div>`;return;}
+  wrap.innerHTML=`<div class="history-list">${S.sessions.map(s=>{
+    const pct=Math.round(s.correct/s.total*100),m=Math.floor(s.time/60),sec=s.time%60;
+    return`<div class="hist-item">
+      <div style="flex:1"><div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:14px;font-weight:700">${esc(s.topic)}</span>
+        <span class="chip ${pct>=80?'chip-teal':pct>=50?'chip-amber':'chip-red'}">${pct}%</span></div>
+        <div class="hist-meta">${s.date} · ${s.total} Qs · ⏱ ${m}m ${sec}s · ✓${s.correct} ✗${s.wrong} ⏭${s.skipped}</div>
+        <div class="score-bar-wrap"><div class="score-bar-fill" style="width:${pct}%"></div></div></div>
+      <button class="btn btn-sm" onclick="reviewSession('${s.id}')" style="margin-left:16px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Review</button></div>`;
+  }).join('')}</div>`;
+}
+function reviewSession(id){const s=S.sessions.find(x=>x.id===id);if(s){renderResult(s);showView('result');}}
+function clearHistory(){if(!confirm('Clear all history?'))return;S.sessions=[];save();renderHistory();updateSidebar();toast('History cleared')}
+
+// ──────────────────────────────────────────────────────────
+// TOAST
+// ──────────────────────────────────────────────────────────
+function toast(msg,type=''){
+  const c=document.getElementById('toast-wrap');
+  const t=document.createElement('div');
+  t.className='toast'+(type?' '+type:'');
+  const icon=type==='success'?'✓':type==='error'?'✕':'✦';
+  const icol=type==='success'?'var(--green)':type==='error'?'var(--red)':'var(--p1)';
+  t.innerHTML=`<span style="color:${icol};font-size:15px">${icon}</span>${esc(msg)}`;
+  c.appendChild(t);
+  setTimeout(()=>{t.style.cssText='opacity:0;transform:translateX(20px);transition:all .3s ease';setTimeout(()=>t.remove(),300)},2600);
+}
+
+// ──────────────────────────────────────────────────────────
+// INIT
+// ──────────────────────────────────────────────────────────
+updateSidebar();renderDashboard();
+</script>
+</body>
+</html>
